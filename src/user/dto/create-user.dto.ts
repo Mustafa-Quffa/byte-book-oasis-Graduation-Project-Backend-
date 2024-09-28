@@ -64,16 +64,6 @@ export class SignupDto {
   @IsNotEmpty()
   nationality_id: number;
 
-
-  @ApiProperty({
-    description: 'User profile image URL or path',
-    example: 'https://example.com/image.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  image?: string; // Optional image URL or path
-
-
   @ApiProperty({
     description: 'User role',
     example: 'CUSTOMER',

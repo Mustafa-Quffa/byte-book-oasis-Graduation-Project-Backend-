@@ -9,7 +9,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
-  private readonly maxImageUrlLength = 255;
+
 
   constructor(
     @InjectRepository(User)
@@ -18,21 +18,10 @@ export class UserService {
     private readonly nationalityRepository: Repository<Nationality>
   ) {}
 
-  private validateImage(imageUrl: string): void {
-    // Check URL length
-    if (imageUrl.length > this.maxImageUrlLength) {
-      throw new BadRequestException('Image URL is too long');
-    }
-    
-    // Optionally, validate URL format (basic check)
-    const urlRegex = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i;
-    if (!urlRegex.test(imageUrl)) {
-      throw new BadRequestException('Invalid image URL format');
-    }
-  }
+  
 
   async signup(signupDto: SignupDto): Promise<User> {
-    const { email, password, age, nationality_id, user_name, first_name, last_name, role, image } = signupDto;
+    const { email, password, age, nationality_id, user_name, first_name, last_name, role } = signupDto;
 
     if (!email || !password || !age || !nationality_id || !first_name || !last_name || !role || !user_name ) {
       throw new BadRequestException('All fields are required');
@@ -43,8 +32,6 @@ export class UserService {
     if (!emailRegex.test(email)) {
       throw new BadRequestException('Invalid email format');
     }
-
-    
 
     // Validate user_name
     const existingUser_name = await this.userRepository.findOne({
@@ -82,10 +69,6 @@ export class UserService {
       throw new BadRequestException('Invalid nationality ID');
     }
 
-    // Validate image URL if provided
-    if (image) {
-      this.validateImage(image);
-    }
 
     // Create a new user
     const newUser = this.userRepository.create({
@@ -96,7 +79,6 @@ export class UserService {
       age,
       user_name,
       nationality,
-      image,
       role
     });
 
@@ -128,10 +110,7 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Validate image URL if provided
-    if (updateUserDto.image) {
-      this.validateImage(updateUserDto.image);
-    }
+ 
 
     // Update user fields with the provided data
     Object.assign(user, updateUserDto);

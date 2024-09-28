@@ -7,7 +7,6 @@ import { User } from './entities/user.entity';
 import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express/multer';
 
 @ApiTags('user')
 @Controller('user')
@@ -35,6 +34,28 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async login(@Body() LogInDto: LogInDto) {
     return this.auth.login(LogInDto);
+  }
+
+  @Post('password-reset')
+  @ApiOperation({ summary: 'Send password reset email' })  // Summary for password reset email
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' } } } })  // Define the shape of the body directly in Swagger
+  @ApiResponse({ status: 200, description: 'Reset email sent successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid email address' })
+  async sendResetEmail(@Body('email') email: string) {
+    await this.auth.sendPasswordReset(email);
+  }
+
+  @Post('reset-password/:token')
+  @ApiOperation({ summary: 'Reset password using token' })  // Summary for password reset
+  @ApiParam({ name: 'token', type: String, description: 'The password reset token' })  // Param in the URL
+  @ApiBody({ schema: { type: 'object', properties: { newPassword: { type: 'string' } } } })  // Define body for new password
+  @ApiResponse({ status: 200, description: 'Password successfully reset' })
+  @ApiResponse({ status: 400, description: 'Invalid token or password' })
+  async resetPassword(
+    @Param('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    await this.auth.resetPassword(token, newPassword);
   }
 
   @Get(':id')

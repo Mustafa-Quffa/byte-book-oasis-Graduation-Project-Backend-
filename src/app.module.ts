@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -26,6 +28,30 @@ import { NationalityModule } from './nationalities/nationalities.module';
         database: configService.get('DB_NAME'),
         entities: [join(__dirname, '**', '*.entity.{ts,js}')],
         synchronize: true,
+      }),
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.get('MAIL_HOST'), // Example: 'smtp.mailtrap.io'
+          port: configService.get('MAIL_PORT'), // Example: 2525
+          auth: {
+            user: configService.get('MAIL_USER'),
+            pass: configService.get('MAIL_PASS'),
+          },
+        },
+        defaults: {
+          from: '"No Reply" <thecosen434@gmail.com>', // Default sender
+        },
+        template: {
+          dir: join(__dirname, 'templates'), // Directory for your email templates
+          adapter: new HandlebarsAdapter(), // Use Handlebars for templating
+          options: {
+            strict: true,
+          },
+        },
       }),
     }),
     UserModule,

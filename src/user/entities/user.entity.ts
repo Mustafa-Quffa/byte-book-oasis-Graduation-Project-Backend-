@@ -37,6 +37,11 @@ user_name: string;
 @Column()
 password: string;
 
+@Column({ nullable: true })
+resetPasswordToken: string;
+
+@Column({ nullable: true, type: 'timestamp' })
+resetPasswordExpiry: Date;
 
 @IsOptional()
 @IsPhoneNumber()
