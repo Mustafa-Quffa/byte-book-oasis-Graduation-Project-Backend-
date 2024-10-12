@@ -5,7 +5,6 @@ import { Repository } from 'typeorm/repository/Repository';
 import { User } from '../user/entities/user.entity';
 import { LogInDto } from '../user/dto/user-logIn.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MailerService } from '@nestjs-modules/mailer';
 import * as crypto from 'crypto';
 import { MoreThan } from 'typeorm';
 import * as nodemailer from 'nodemailer';
@@ -94,21 +93,22 @@ export class AuthService {
       subject: 'Password Reset Request',
       text: `You requested a password reset. Click the following link to reset your password: ${resetUrl}`,
       html: `
-      <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2 style="color: #4CAF50;">Password Reset Request</h2>
-        <p>Dear User,</p>
-        <p>We received a request to reset your password. If you made this request, please click the link below to reset your password:</p>
-        <p>
-          <a 
-            href="${resetUrl}" 
-            style="color: white; background-color: #4CAF50; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            Reset Your Password
-          </a>
-        </p>
-        <p>If you did not request this change, please ignore this email.</p>
-        <p>Thanks,</p>
-        <p>Your Company Name</p>
-      </div>
+          <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #4CAF50;">Password Reset Request</h2>
+      <p>Dear User,</p>
+      <p>We received a request to reset your password. If you made this request, please click the link below to reset your password:</p>
+      <p>
+        <a 
+          href="${resetUrl}" 
+          style="color: white; background-color: #4CAF50; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">
+          Reset Your Password
+        </a>
+      </p>
+      <p>If you did not request this change, please ignore this email.</p>
+      <p>Thanks,</p>
+      <p>Your Company Name</p>
+    </div>
+
     `
         };
 

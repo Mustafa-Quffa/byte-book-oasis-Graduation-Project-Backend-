@@ -10,6 +10,9 @@ import { UserModule } from './user/user.module';
 import { BookModule } from './book/book.module';
 import { UserBooksModule } from './user_books/user_books.module';
 import { NationalityModule } from './nationalities/nationalities.module';
+import { GenresModule } from './genres/genres.module';
+import { BookGenresModule } from './book_genres/book_genres.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -58,6 +61,9 @@ import { NationalityModule } from './nationalities/nationalities.module';
     BookModule,
     UserBooksModule,
     NationalityModule,
+    GenresModule,
+    BookGenresModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
