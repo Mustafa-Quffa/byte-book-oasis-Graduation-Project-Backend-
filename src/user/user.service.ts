@@ -21,9 +21,9 @@ export class UserService {
   
 
   async signup(signupDto: SignupDto): Promise<User> {
-    const { email, password, age, nationality_id, user_name, first_name, last_name, role } = signupDto;
+    const { email, password, age, nationality_id, user_name, first_name, last_name } = signupDto;
 
-    if (!email || !password || !age || !nationality_id || !first_name || !last_name || !role || !user_name ) {
+    if (!email || !password || !age || !nationality_id || !first_name || !last_name || !user_name ) {
       throw new BadRequestException('All fields are required');
     }
 
@@ -79,7 +79,6 @@ export class UserService {
       age,
       user_name,
       nationality,
-      role
     });
 
     // Save the user to the database

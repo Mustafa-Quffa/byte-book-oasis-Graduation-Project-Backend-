@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
-import { BookService } from './book.service';
+import { BookService } from '../book/book.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity'; // Ensure you have this import for the response types
@@ -15,17 +15,27 @@ export class BookController {
   @ApiBody({ type: CreateBookDto })
   @ApiResponse({ status: 201, description: 'Book successfully created', type: Book })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() createBookDto: CreateBookDto) {
-    return this.bookService.create(createBookDto);
+  async addBook(@Body() createBookDto: CreateBookDto) {
+    return this.bookService.addBook(createBookDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all books' })
-  @ApiResponse({ status: 200, description: 'List of all books', type: [Book] })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  findAll() {
-    return this.bookService.findAll();
+@ApiOperation({ summary: 'Retrieve all books' })
+@ApiResponse({ status: 200, description: 'List of all books', type: [Book] })
+@ApiResponse({ status: 500, description: 'Internal server error' })
+async getBooks(
+  @Query('search') search?: string,
+  @Query('genre') genre?: string, // Comma-separated genre IDs
+) {
+  let genreIds: number[] = [];
+
+  // If the genre parameter exists, split it by commas and parse into numbers
+  if (genre) {
+    genreIds = genre.split(',').map(id => parseInt(id.trim(), 10));
   }
+
+  return this.bookService.getBooks(search, genreIds); // Pass genre IDs as numbers
+}
 
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve a book by ID' })
@@ -36,16 +46,19 @@ export class BookController {
     return this.bookService.findOne(+id);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a book by ID' })
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update a book by ID put' })
   @ApiParam({ name: 'id', type: String, description: 'ID of the book to update' })
   @ApiBody({ type: UpdateBookDto })
   @ApiResponse({ status: 200, description: 'Book successfully updated', type: Book })
   @ApiResponse({ status: 404, description: 'Book not found' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  update(@Param('id') id: string, @Body() updateBookDto: UpdateBookDto) {
-    return this.bookService.update(+id, updateBookDto);
+  async updateBook(@Param('id') id: number, @Body() updateBookDto: UpdateBookDto) {
+    return this.bookService.updateBook(id, updateBookDto);
   }
+
+
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a book by ID' })
@@ -53,7 +66,7 @@ export class BookController {
   @ApiResponse({ status: 200, description: 'Book successfully deleted' })
   @ApiResponse({ status: 404, description: 'Book not found' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  remove(@Param('id') id: string) {
-    return this.bookService.remove(+id);
+  async deleteBook(@Param('id') id: number) {
+    return this.bookService.deleteBook(id);
   }
 }

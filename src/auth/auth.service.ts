@@ -51,7 +51,7 @@ export class AuthService {
 
     // Generate a JWT token for the authenticated user
     const payload = { email: user.email, sub: user.id }; // Customize the payload as needed
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, { expiresIn: '1h' }); // Expires in 1 hour
 
     return {
       message: 'Login successful',

@@ -1,5 +1,6 @@
 import { BaseEntity } from 'src/entities/base.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Genre } from 'src/genres/entities/genre.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
 
 @Entity('books')
 export class Book extends BaseEntity{
@@ -50,4 +51,9 @@ export class Book extends BaseEntity{
 
   @Column({ type: 'varchar', length: 255 })
   last_modified_by: string;
+
+  // Many-to-Many relationship with Genre
+  @ManyToMany(() => Genre, (genre) => genre.books, { cascade: true })
+  @JoinTable({ name: 'book_genres' }) // Specifies the joining table name
+  genres: Genre[];
 }
