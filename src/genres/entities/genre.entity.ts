@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Book } from 'src/book/entities/book.entity';
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('genres')
 export class Genre {
@@ -10,7 +10,7 @@ export class Genre {
   @Column({ unique: true })
   title: string;
 
-  // Many-to-Many relationship with Book
-  @ManyToMany(() => Book, (book) => book.genres)
+  @ManyToMany(() => Book, book => book.genres)
   books: Book[];
+
 }

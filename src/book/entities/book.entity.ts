@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/entities/base.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('books')
 export class Book extends BaseEntity{
@@ -19,7 +19,7 @@ export class Book extends BaseEntity{
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int'})
   publish_year: number;
 
   @Column({ type: 'text' })
@@ -40,20 +40,10 @@ export class Book extends BaseEntity{
   @Column({ type: 'int' })
   num_of_copies: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  created_date: Date;
-
-  @Column({ type: 'varchar', length: 255 })
-  created_by: string;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  last_modified: Date;
-
-  @Column({ type: 'varchar', length: 255 })
-  last_modified_by: string;
-
-  // Many-to-Many relationship with Genre
-  @ManyToMany(() => Genre, (genre) => genre.books, { cascade: true })
-  @JoinTable({ name: 'book_genres' }) // Specifies the joining table name
+ 
+  @ManyToMany(() => Genre, genre => genre.books, { cascade: true })
+  @JoinTable({name: 'books_genres'}) // This decorator is required on one side of the relationship
   genres: Genre[];
+
+
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Put, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Put, UseGuards, UseInterceptors, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SignupDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -56,6 +56,24 @@ export class UserController {
     @Body('newPassword') newPassword: string,
   ) {
     await this.auth.resetPassword(token, newPassword);
+  }
+
+  @Get('/users')
+  async getUsers(
+    @Query('limit') limit: string = '10',
+    @Query('offset') offset: string = '0',
+  ): Promise<User[]> {
+    return this.userService.getUsers(Number(limit), Number(offset));
+  }
+
+  @Get('total-users')
+  async getTotalUsers(): Promise<number> {
+    return this.userService.getTotalUsers();
+  }
+
+  @Get('total-admins')
+  async getTotalAdmins(): Promise<number> {
+    return this.userService.getTotalAdmins();
   }
 
   @Get(':id')

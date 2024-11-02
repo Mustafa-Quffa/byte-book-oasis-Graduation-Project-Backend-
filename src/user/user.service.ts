@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Nationality } from 'src/nationalities/entities/nationality.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from '../common/enums/userRole.enum';
 
 @Injectable()
 export class UserService {
@@ -86,6 +87,26 @@ export class UserService {
 
     return newUser;
   }
+
+  async getUsers(limit: number, offset: number): Promise<User[]> {
+    return this.userRepository.find({
+      take: limit,
+      skip: offset,
+      order: {
+        id: 'ASC', 
+      },
+    });
+  }
+  
+  async getTotalUsers(): Promise<number> {
+    return this.userRepository.count();
+  }
+
+  async getTotalAdmins(): Promise<number> {
+    return this.userRepository.count({ where: { role: UserRole.ADMIN } }); // Use the enum here
+  }
+
+
 
   async getUserById(id: string): Promise<User> {
     const numericId = parseInt(id, 10);

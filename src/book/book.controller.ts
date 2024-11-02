@@ -1,72 +1,77 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Put, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 import { BookService } from '../book/book.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity'; // Ensure you have this import for the response types
+import { AuthGuard } from '@nestjs/passport';
+import { BookDto } from './dto/book.dto';
 
-@ApiTags('book')
 @Controller('book')
 export class BookController {
-  constructor(private readonly bookService: BookService) {}
+  constructor(private readonly booksService: BookService) {}
 
-  @Post('create')
-  @ApiOperation({ summary: 'Create a new book' })
-  @ApiBody({ type: CreateBookDto })
-  @ApiResponse({ status: 201, description: 'Book successfully created', type: Book })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async addBook(@Body() createBookDto: CreateBookDto) {
-    return this.bookService.addBook(createBookDto);
-  }
 
-  @Get()
-@ApiOperation({ summary: 'Retrieve all books' })
-@ApiResponse({ status: 200, description: 'List of all books', type: [Book] })
-@ApiResponse({ status: 500, description: 'Internal server error' })
-async getBooks(
-  @Query('search') search?: string,
-  @Query('genre') genre?: string, // Comma-separated genre IDs
-) {
-  let genreIds: number[] = [];
+  @Get('/books')
+  async getUsers(
+      @Query('limit') limit: string = '10',
+      @Query('offset') offset: string = '0',
+  ): Promise<Book[]> {
+      const parsedLimit = Number(limit);
+      const parsedOffset = Number(offset);
 
-  // If the genre parameter exists, split it by commas and parse into numbers
-  if (genre) {
-    genreIds = genre.split(',').map(id => parseInt(id.trim(), 10));
-  }
+    if (isNaN(parsedLimit) || isNaN(parsedOffset)) {
+        throw new BadRequestException('Limit and Offset must be valid numbers');
+    }
 
-  return this.bookService.getBooks(search, genreIds); // Pass genre IDs as numbers
+
+    return this.booksService.getBooks(parsedLimit, parsedOffset);
 }
 
+  
+
+
+  @Get('total-books')
+  async getBooksCount(): Promise<number> {
+    return this.booksService.countBooks();
+  }
+
+  @Post('add-new-book')
+  // @UseGuards(AuthGuard('jwt'))
+  async addNewBook(@Body() createBookDto: CreateBookDto): Promise<Book> {
+    return this.booksService.addNewBook(createBookDto);
+  }
+
   @Get(':id')
-  @ApiOperation({ summary: 'Retrieve a book by ID' })
-  @ApiParam({ name: 'id', type: String, description: 'ID of the book to retrieve' })
+  @ApiOperation({ summary: 'Get a book by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'The ID of the book' })
   @ApiResponse({ status: 200, description: 'Book details', type: Book })
   @ApiResponse({ status: 404, description: 'Book not found' })
-  findOne(@Param('id') id: string) {
-    return this.bookService.findOne(+id);
-  }
-
+  async getUser(@Param('id') id: number): Promise<BookDto> {
+    return this.booksService.getBookById(id);
+  }  
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a book by ID put' })
-  @ApiParam({ name: 'id', type: String, description: 'ID of the book to update' })
-  @ApiBody({ type: UpdateBookDto })
+  // @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Update Book details by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'The ID of the Book to update' })
+  @ApiBody({ type: CreateBookDto })
   @ApiResponse({ status: 200, description: 'Book successfully updated', type: Book })
   @ApiResponse({ status: 404, description: 'Book not found' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async updateBook(@Param('id') id: number, @Body() updateBookDto: UpdateBookDto) {
-    return this.bookService.updateBook(id, updateBookDto);
+  async updateBook(
+    @Param('id') id: number,
+    @Body() createBookDto: CreateBookDto,
+  ): Promise<Book> {
+    return this.booksService.updateBook(id, createBookDto);
   }
 
-
-
   @Delete(':id')
+  // @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Delete a book by ID' })
-  @ApiParam({ name: 'id', type: String, description: 'ID of the book to delete' })
+  @ApiParam({ name: 'id', type: Number, description: 'The ID of the book to delete' })
   @ApiResponse({ status: 200, description: 'Book successfully deleted' })
   @ApiResponse({ status: 404, description: 'Book not found' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async deleteBook(@Param('id') id: number) {
-    return this.bookService.deleteBook(id);
+  async deleteUser(@Param('id') id: number): Promise<string> {
+    return this.booksService.deleteBook(id);
   }
 }
