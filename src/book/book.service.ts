@@ -1,10 +1,9 @@
-import { Body, Injectable, NotFoundException, Post } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { Book } from './entities/book.entity';
 import { Genre } from '../genres/entities/genre.entity';
 import { CreateBookDto } from '../book/dto/create-book.dto';
-import { User } from 'src/user/entities/user.entity';
 import { BookDto } from './dto/book.dto';
 
 @Injectable()
@@ -15,47 +14,122 @@ export class BookService {
 
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
-
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
   ) {}
 
+  /**
+   * Count the total number of books in the database.
+   */
   async countBooks(): Promise<number> {
-    return await this.bookRepository.count();
+    return this.bookRepository.count();
   }
 
-  async addNewBook(createBookDto: CreateBookDto): Promise<Book> {  // No semicolon here
-    const { genre_ids, ...bookData } = createBookDto;
+  /**
+   * Add a new book to the database.
+   */
+  async addNewBook(createBookDto: CreateBookDto): Promise<Book> {
+    const { genre_ids, image, ...bookData } = createBookDto;
 
-  // Find all genres that match the provided genre IDs
-  const genres = await this.genreRepository.findBy({ id: In(genre_ids) });
+    // Validate genres
+    const genres = await this.genreRepository.findBy({ id: In(genre_ids) });
+    if (genres.length !== genre_ids.length) {
+      throw new NotFoundException('One or more genres with provided IDs not found');
+    }
 
-  if (genres.length !== genre_ids.length) {
-    throw new NotFoundException(`One or more genres with provided IDs not found`);
-  }
-
-  // Create a new book instance and assign the found genres
-  const newBook = this.bookRepository.create({
-    ...bookData,
-    genres,
-  });
+    // Create and save the book
+    const newBook = this.bookRepository.create({
+      ...bookData,
+      image,
+      genres,
+    });
 
     return this.bookRepository.save(newBook);
   }
 
+  /**
+   * Get a paginated list of books.
+   */
   async getBooks(limit: number, offset: number): Promise<Book[]> {
     return this.bookRepository.find({
       take: limit,
       skip: offset,
-      order: {
-        id: 'ASC', 
-      },
+      order: { id: 'ASC' },
     });
   }
 
-  async getBookById(id: number): Promise<BookDto> {
+  async getPaginatedBooks(offset: number, limit: number) {
+    const [books, total] = await this.bookRepository.findAndCount({
+      skip: offset,
+      take: limit,
+    });
+  
+    return {
+      books,
+      total,
+      pageCount: Math.ceil(total / limit),
+      currentPage: Math.ceil(offset / limit) + 1,
+    };
+  }
+
+  /**
+   * Filter books based on genre, author, or minimum rating.
+   */
+  async getBooksByFilter(filters: {
+    genre?: string;
+    author?: string;
+    minRating?: number;
+  }): Promise<Book[]> {
+    const queryBuilder = this.bookRepository.createQueryBuilder('book');
+
+    if (filters.genre) {
+      queryBuilder.innerJoinAndSelect('book.genres', 'genre').where('genre.title = :genre', {
+        genre: filters.genre,
+      });
+    }
+
+    if (filters.author) {
+      queryBuilder.andWhere('book.author LIKE :author', { author: `%${filters.author}%` });
+    }
+
+    if (filters.minRating !== undefined) {
+      queryBuilder.andWhere('book.rating >= :minRating', { minRating: filters.minRating });
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Search books by title or author.
+   */
+  async searchBooks(query: string, page: number, limit: number) {
+    const [books, total] = await this.bookRepository.findAndCount({
+      where: [
+        { title: Like(`%${query}%`) },  // Searching by title
+        { author: Like(`%${query}%`) },  // Searching by author
+      ],
+      take: limit,  // Limit the number of results
+      skip: (page - 1) * limit,  // Pagination: Skip records for previous pages
+    });
+
+    return {
+      total,
+      books,
+    };
+  }
+
+
+
+  /**
+   * Get book details by ID, including genres.
+   */
+  async getBookById(id: string): Promise<BookDto> {
+    const numericId = parseInt(id, 10);
+  
+    if (isNaN(numericId)) {
+      throw new BadRequestException('Invalid book ID');
+    }
+  
     const book = await this.bookRepository.findOne({
-      where: { id: id },
+      where: { id: numericId },
       relations: ['genres'],
     });
   
@@ -63,8 +137,7 @@ export class BookService {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
   
-    // Map the Book entity to BookDto
-    const bookDto: BookDto = {
+    return {
       id: book.id,
       title: book.title,
       author: book.author,
@@ -77,41 +150,48 @@ export class BookService {
       status: book.status,
       rating: book.rating,
       num_of_copies: book.num_of_copies,
-      genres: book.genres.map(genre => ({ title: genre.title })), // Assuming genre has a 'title' property
+      genres: book.genres.map((genre) => ({ title: genre.title })),
     };
-  
-    return bookDto;
   }
 
+  async getAllBooksGroupedByGenres(): Promise<{ [genre: string]: Book[] }> {
+    const genresWithBooks = await this.genreRepository.find({ relations: ['books'] }); // Assuming a relation exists
+    const result = {};
+    for (const genre of genresWithBooks) {
+      result[genre.title] = genre.books; // Assuming `books` is the relation
+    }
+    return result;
+  }
+  
+  
+  
+
+  /**
+   * Update a book's details by ID.
+   */
   async updateBook(id: number, createBookDto: CreateBookDto): Promise<Book> {
-    const book = await this.userRepository.findOne({
-      where: { id }
-    });
+    const book = await this.bookRepository.findOne({ where: { id } });
+
     if (!book) {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
- 
-
-    // Update user fields with the provided data
     Object.assign(book, createBookDto);
 
     return this.bookRepository.save(book);
   }
 
+  /**
+   * Delete a book by ID.
+   */
   async deleteBook(id: number): Promise<string> {
-    const book = await this.bookRepository.findOne({
-      where: { id }
-    });
+    const book = await this.bookRepository.findOne({ where: { id } });
 
     if (!book) {
-      throw new NotFoundException('No user matches the provided ID');
+      throw new NotFoundException('No book matches the provided ID');
     }
 
     await this.bookRepository.remove(book);
-    return 'User successfully deleted';
+    return 'Book successfully deleted';
   }
-  }
-
-  
-
+}

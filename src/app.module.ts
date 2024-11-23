@@ -12,6 +12,7 @@ import { NationalityModule } from './nationalities/nationalities.module';
 import { GenresModule } from './genres/genres.module';
 import { AdminModule } from './admin/admin.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { UploadController } from './upload.controller';
 import { join } from 'path';
 
 
@@ -70,7 +71,7 @@ import { join } from 'path';
     GenresModule,
     AdminModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController,UploadController],
   providers: [AppService],
 })
 export class AppModule {}
