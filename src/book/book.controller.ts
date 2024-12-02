@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Put, UseGuards, BadRequestException, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Put, UseGuards, BadRequestException, UploadedFile, UseInterceptors, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 import { BookService } from '../book/book.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -51,6 +51,17 @@ export class BookController {
     return this.booksService.getPaginatedBooks(offset, limit);
   }
 
+  @Get('all')
+  @ApiOperation({ summary: 'Get paginated list of books for admin' })
+  @ApiResponse({ status: 200, description: 'List of books', type: [Book] })
+  async getBooksForAdmin(
+    @Query('page') page: number = 1,       // Default to 1 if no page is provided
+    @Query('limit') limit: number = 10,    // Default to 10 if no limit is provided
+  ) {
+    const offset = (page - 1) * limit;
+    return this.booksService.getBooksForAdmin(limit, offset);
+  }
+
   @Get('filter')
   @ApiOperation({ summary: 'Get books by filter (genre, author, rating)' })
   @ApiResponse({ status: 200, description: 'Books matching filter', type: [Book] })
@@ -67,12 +78,33 @@ export class BookController {
     });
   }
 
-  @Get('/grouped-by-genre')
-@ApiOperation({ summary: 'Get all books grouped by genre' })
-@ApiResponse({ status: 200, description: 'Books grouped by genres', type: Object })
-async getBooksGroupedByGenre() {
-  return this.booksService.getAllBooksGroupedByGenres();
+
+  @Get('genres-with-books')
+async getGenresWithBooks() {
+  return await this.booksService.getGenresWithBooks();
 }
+
+
+// @Get('/grouped-by-genre')
+// @ApiOperation({ summary: 'Get all books grouped by genre with pagination' })
+// @ApiResponse({
+//   status: 200,
+//   description: 'Books grouped by genres with pagination',
+//   type: Object, // Adjust to a DTO if using Swagger schema definitions
+// })
+// @ApiResponse({ status: 500, description: 'Internal server error' })
+// async getBooksGroupedByGenre(
+//   @Query('pageSize') pageSize: number = 5, // Default to 5 if not provided
+//   @Query('pageNumber') pageNumber: number = 1, // Default to the first page if not provided
+// ) {
+//   try {
+//     return await this.booksService.getAllBooksGroupedByGenres(pageSize, pageNumber);
+//   } catch (error) {
+//     throw new HttpException('Failed to fetch books by genre', HttpStatus.INTERNAL_SERVER_ERROR);
+//   }
+// }
+
+  
 
 
   @Get('total-books')

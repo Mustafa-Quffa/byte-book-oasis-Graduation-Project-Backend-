@@ -31,31 +31,32 @@ export class AuthService {
 
   async login(userLoginDto: LogInDto) {
     const { email, password } = userLoginDto;
-
+  
     // Find the user by email
     const user = await this.userRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email })
       .getOne();
-
+  
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
-
+  
     // Compare provided password with the stored hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
+  
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
-
+  
     // Generate a JWT token for the authenticated user
-    const payload = { email: user.email, sub: user.id }; // Customize the payload as needed
+    const payload = { email: user.email, sub: user.id }; // `sub` is used as the user ID
     const token = this.jwtService.sign(payload, { expiresIn: '1h' }); // Expires in 1 hour
-
+  
     return {
       message: 'Login successful',
-      token,
+      token, // JWT token
+      id: user.id, // Include the user ID in the response
       first_name: user.first_name,
       last_name: user.last_name,
       age: user.age,

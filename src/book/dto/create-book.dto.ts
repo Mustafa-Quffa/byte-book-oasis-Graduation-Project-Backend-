@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsString, IsOptional, IsDecimal, IsArray, IsInt, ArrayMinSize } from '@nestjs/class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Column } from 'typeorm';
 
 export class CreateBookDto {
   @ApiProperty({ description: 'The title of the book', example: 'The Great Gatsby' })
@@ -46,6 +47,8 @@ export class CreateBookDto {
   @IsString()
   @IsNotEmpty()
   status: string;
+
+
 
   @ApiProperty({ description: 'The rating of the book', example: 4.5 })
   @IsDecimal()

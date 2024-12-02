@@ -56,6 +56,15 @@ export class BookService {
     });
   }
 
+  async getBooksForAdmin(limit: number, offset: number): Promise<Book[]> {
+    return this.bookRepository.find({
+      take: limit,         // Limit the number of results
+      skip: offset,        // Skip the first "offset" results
+      order: { id: 'ASC' }, // Order by ID ascending
+    });
+  }
+
+
   async getPaginatedBooks(offset: number, limit: number) {
     const [books, total] = await this.bookRepository.findAndCount({
       skip: offset,
@@ -101,23 +110,41 @@ export class BookService {
    * Search books by title or author.
    */
   async searchBooks(query: string, page: number, limit: number) {
+    // Ensure page and limit are positive integers
+    const currentPage = Math.max(1, page);
+    const currentLimit = Math.max(1, limit);
+  
+    // Build the query with relations
     const [books, total] = await this.bookRepository.findAndCount({
       where: [
         { title: Like(`%${query}%`) },  // Searching by title
-        { author: Like(`%${query}%`) },  // Searching by author
+        { author: Like(`%${query}%`) }, // Searching by author
+        { genres: { title: Like(`%${query}%`) } }, // Searching by genre name (relation)
       ],
-      take: limit,  // Limit the number of results
-      skip: (page - 1) * limit,  // Pagination: Skip records for previous pages
+      relations: ['genres'], // Include genres relation
+      take: currentLimit, // Limit the number of results
+      skip: (currentPage - 1) * currentLimit, // Pagination: Skip records for previous pages
     });
-
+  
+    // Calculate pagination details
+    const totalPages = Math.ceil(total / currentLimit);
+    const hasNextPage = currentPage < totalPages;
+    const hasPreviousPage = currentPage > 1;
+  
     return {
-      total,
-      books,
+      total, // Total number of books matching the query
+      books, // Array of books with genres included
+      pagination: {
+        currentPage,
+        totalPages,
+        limit: currentLimit,
+        hasNextPage,
+        hasPreviousPage,
+        nextPage: hasNextPage ? currentPage + 1 : null,
+        previousPage: hasPreviousPage ? currentPage - 1 : null,
+      },
     };
   }
-
-
-
   /**
    * Get book details by ID, including genres.
    */
@@ -154,14 +181,44 @@ export class BookService {
     };
   }
 
-  async getAllBooksGroupedByGenres(): Promise<{ [genre: string]: Book[] }> {
-    const genresWithBooks = await this.genreRepository.find({ relations: ['books'] }); // Assuming a relation exists
-    const result = {};
-    for (const genre of genresWithBooks) {
-      result[genre.title] = genre.books; // Assuming `books` is the relation
-    }
-    return result;
+
+  async getGenresWithBooks() {
+    const genresWithBooks = await this.genreRepository
+      .createQueryBuilder('genre')
+      .innerJoin('genre.books', 'book') // Join genres with books
+      .select(['genre.id', 'genre.title']) // Select only required fields
+      .distinct(true) // Ensure distinct genres
+      .getMany();
+  
+    return genresWithBooks;
   }
+  
+
+  // async getAllBooksGroupedByGenres(pageSize: number = 5, pageNumber: number = 1): Promise<{ [genre: string]: Book[] }> {
+  //   const genresWithBooks = await this.genreRepository.find({ relations: ['books'] });
+  
+  //   const result = {};
+  
+  //   // Loop through each genre to apply pagination to its books
+  //   for (const genre of genresWithBooks) {
+  //     const totalBooks = genre.books.length;
+  //     const startIndex = (pageNumber - 1) * pageSize;
+  //     const endIndex = pageNumber * pageSize;
+  
+  //     // Slice books array based on pagination parameters
+  //     const books = genre.books.slice(startIndex, endIndex);
+      
+  //     result[genre.title] = books;
+  
+  //     // Optionally, you can also return the total count of books in the genre
+  //     // so the client can calculate total pages if needed.
+  //     result[genre.title]['totalBooks'] = totalBooks;
+  //   }
+  
+  //   return result;
+  // }
+  
+  
   
   
   

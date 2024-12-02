@@ -40,7 +40,10 @@ export class Book extends BaseEntity{
   @Column({ type: 'int' })
   num_of_copies: number;
 
- 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  pdfUrl: string; // Path or URL to the PDF file
+
+  
   @ManyToMany(() => Genre, genre => genre.books, { cascade: true })
   @JoinTable({name: 'books_genres'}) // This decorator is required on one side of the relationship
   genres: Genre[];

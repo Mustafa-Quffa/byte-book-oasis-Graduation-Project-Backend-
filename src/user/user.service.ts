@@ -19,8 +19,6 @@ export class UserService {
     private readonly nationalityRepository: Repository<Nationality>
   ) {}
 
-  
-
   async signup(signupDto: SignupDto): Promise<User> {
     const { email, password, age, nationality_id, user_name, first_name, last_name } = signupDto;
 
@@ -47,7 +45,6 @@ export class UserService {
     if (password.length < 8) {
       throw new BadRequestException('Password must be at least 8 characters long');
     }
-
     // Validate age
     if (age < 0 || age > 150) {
       throw new BadRequestException('Age must be a valid number between 0 and 150');
